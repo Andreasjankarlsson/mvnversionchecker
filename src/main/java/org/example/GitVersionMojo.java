@@ -12,7 +12,9 @@ import org.example.mapper.DependencyMapper;
 import org.example.mapper.PluginMapper;
 import org.example.model.DependencyModel;
 import org.example.model.MavenDependency;
+import org.example.model.PluginModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,23 +32,36 @@ public class GitVersionMojo extends AbstractMojo {
     private static String VERSION_MATCH = "^\\d+\\.\\d+\\.\\d+$";
 
     public void execute() {
-        List<MavenDependency> test5 = getDependencies(project);
-        List<MavenDependency> dependencies = getPlugins(project);
-        dependencies.forEach(dependency -> dependency.setVersions(searchService.getVersions(dependency)));
+        List<MavenDependency> mavenDependencies = new ArrayList<>();
+        mavenDependencies.addAll(getDependencies(project));
+        mavenDependencies.addAll(getPlugins(project));
+        mavenDependencies .forEach(dependency -> dependency.setVersions(searchService.getVersions(dependency)));
 
-        List<MavenDependency> dependenciesWithNewerVersions = dependencies.stream()
+        List<MavenDependency> dependenciesWithNewerVersions = mavenDependencies .stream()
                 .filter(dependency -> dependency.newerVersionExist(VERSION_MATCH))
                 .toList();
-        for(var dependency : dependenciesWithNewerVersions){
-            var newestVersion = dependency.getLatestVersion(VERSION_MATCH);
-            var currentVersion = dependency.getVersion();
-            var test=true;
-        }
 
-        var test =true;
-        var test2=true;
+        logVersions(dependenciesWithNewerVersions);
     }
 
+    private void logVersions(List<MavenDependency> dependencies){
+        for(var dependency : dependencies){
+            String type ="";
+            if(dependency instanceof PluginModel){
+                type = "Plugin: ";
+            } else if(dependency instanceof DependencyModel){
+                type = "Dependency: ";
+            }
+
+            String logRow = String.format("%s%s:%s:%s has an newer version (%s)",
+                    type,
+                    dependency.getGroupdId(),
+                    dependency.getArtifactId(),
+                    dependency.getVersion(),
+                    dependency.getLatestVersion(VERSION_MATCH));
+            getLog().info(logRow);
+        }
+    }
     private List<MavenDependency> getPlugins(MavenProject project){
         List<String> defaultPluginKeys = List.of(
                 "org.apache.maven.plugins:maven-compiler-plugin", // Maven Compiler Plugin
@@ -56,19 +71,14 @@ public class GitVersionMojo extends AbstractMojo {
                 "org.apache.maven.plugins:maven-deploy-plugin",   // Maven Deploy Plugin
                 "org.apache.maven.plugins:maven-clean-plugin",    // Maven Clean Plugin
                 "org.apache.maven.plugins:maven-site-plugin",     // Maven Site Plugin
-                "org.apache.maven.plugins:maven-dependency-plugin" // Maven Dependency Plugin
+                "org.apache.maven.plugins:maven-dependency-plugin", // Maven Dependency Plugin
+                "org.apache.maven.plugins:maven-resources-plugin" // Maven Resources Plugin
         );
-        List<Plugin> test = project.getBuild()
-                .getPlugins()
-                .stream()
-                .filter(plugin -> !defaultPluginKeys.contains(plugin.getKey()))
-                .toList();
-        var test123 = test.get(0);
-        var test2 = project.getBuildPlugins();
 
         PluginMapper pluginMapper = PluginMapper.INSTANCE;
         var plugins = project.getBuildPlugins()
                 .stream()
+                .filter(plugin -> !defaultPluginKeys.contains(plugin.getKey()))
                 .map(plugin -> (MavenDependency) pluginMapper.toPluginModel(plugin))
                 .toList();
 

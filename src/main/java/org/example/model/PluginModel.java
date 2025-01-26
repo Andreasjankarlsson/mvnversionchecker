@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class DependencyModel implements MavenDependency{
+public class PluginModel implements  MavenDependency{
     private String groupdId;
     private String artifactId;
     private String version;
@@ -19,9 +19,9 @@ public class DependencyModel implements MavenDependency{
         return Version.getLatestVersion(versions,regex).get().getVersion();
     }
 
-    @Override
     public boolean newerVersionExist(String regex){
         var newestVersion = Version.getLatestVersion(versions,regex).get().getVersion();
         return !newestVersion.equals(this.version);
     }
+
 }

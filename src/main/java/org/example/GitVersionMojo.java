@@ -1,28 +1,19 @@
 package org.example;
 
 
-import org.apache.maven.artifact.handler.DefaultArtifactHandler;
-import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.VersionRangeRequest;
-import org.eclipse.aether.resolution.VersionRangeResolutionException;
-import org.eclipse.aether.resolution.VersionRangeResult;
-import org.eclipse.aether.version.Version;
+import org.example.integration.client.MvnSearchService;
+import org.example.mapper.DependencyMapper;
+import org.example.mapper.PluginMapper;
 import org.example.model.DependencyModel;
+import org.example.model.MavenDependency;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * An example Maven Mojo that resolves the current project's git revision and adds
@@ -35,53 +26,64 @@ public class GitVersionMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
-    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
-    private RepositorySystemSession repoSession;
+    private MvnSearchService searchService = new MvnSearchService();
+    private static String VERSION_MATCH = "^\\d+\\.\\d+\\.\\d+$";
 
-    @Component
-    private RepositorySystem repoSystem;
+    public void execute() {
+        List<MavenDependency> test5 = getDependencies(project);
+        List<MavenDependency> dependencies = getPlugins(project);
+        dependencies.forEach(dependency -> dependency.setVersions(searchService.getVersions(dependency)));
 
-    public void execute() throws MojoExecutionException {
-        List<Dependency> dependencies = project.getDependencies();
-
-        for (Dependency dependency : dependencies) {
-
-            DependencyModel dependencyModel = DependencyModel.builder()
-                    .groupdId(dependency.getGroupId())
-                    .artifactId(dependency.getArtifactId())
-                    .version(dependency.getVersion())
-                    .type(dependency.getType())
-                    .scope(dependency.getScope())
-                    .build();
-
-            String packageUrl = String.format("pkg:maven/%s/%s@%s",
-                    dependencyModel.getGroupdId(), dependency.getArtifactId(), dependency.getVersion());
-            String url = OSS_INDEX_URL + "?coordinates=" + packageUrl;
-
-            dependencyModel.setNewestVersion(getNewestVersion(dependencyModel));
-            String output = String.format("(%s)->(%s)",
-                    dependencyModel.getVersion(),
-                    dependencyModel.getNewestVersion());
-            getLog().info("Newer version available for " + dependency.getArtifactId() + ":" +output);
+        List<MavenDependency> dependenciesWithNewerVersions = dependencies.stream()
+                .filter(dependency -> dependency.newerVersionExist(VERSION_MATCH))
+                .toList();
+        for(var dependency : dependenciesWithNewerVersions){
+            var newestVersion = dependency.getLatestVersion(VERSION_MATCH);
+            var currentVersion = dependency.getVersion();
+            var test=true;
         }
+
+        var test =true;
+        var test2=true;
     }
 
-    private String getNewestVersion(DependencyModel dependency){
-        Artifact artifact = new DefaultArtifact(dependency.getGroupdId(),
-                dependency.getArtifactId(),
-                null,
-                "[0,)");
-        VersionRangeRequest rangeRequest = new VersionRangeRequest();
-        rangeRequest.setArtifact(artifact);
-        rangeRequest.setRepositories(project.getRemoteProjectRepositories());
-        try {
-            VersionRangeResult rangeResult = repoSystem.resolveVersionRange(repoSession, rangeRequest);
-            Version highestVersion = rangeResult.getHighestVersion();
-            return highestVersion.toString();
+    private List<MavenDependency> getPlugins(MavenProject project){
+        List<String> defaultPluginKeys = List.of(
+                "org.apache.maven.plugins:maven-compiler-plugin", // Maven Compiler Plugin
+                "org.apache.maven.plugins:maven-surefire-plugin", // Maven Surefire Plugin
+                "org.apache.maven.plugins:maven-jar-plugin",      // Maven Jar Plugin
+                "org.apache.maven.plugins:maven-install-plugin",  // Maven Install Plugin
+                "org.apache.maven.plugins:maven-deploy-plugin",   // Maven Deploy Plugin
+                "org.apache.maven.plugins:maven-clean-plugin",    // Maven Clean Plugin
+                "org.apache.maven.plugins:maven-site-plugin",     // Maven Site Plugin
+                "org.apache.maven.plugins:maven-dependency-plugin" // Maven Dependency Plugin
+        );
+        List<Plugin> test = project.getBuild()
+                .getPlugins()
+                .stream()
+                .filter(plugin -> !defaultPluginKeys.contains(plugin.getKey()))
+                .toList();
+        var test123 = test.get(0);
+        var test2 = project.getBuildPlugins();
 
-        } catch (VersionRangeResolutionException e) {
-            getLog().warn("Failed to retrieve version range for " + dependency.getArtifactId(), e);
-        }
-        return null;
+        PluginMapper pluginMapper = PluginMapper.INSTANCE;
+        var plugins = project.getBuildPlugins()
+                .stream()
+                .map(plugin -> (MavenDependency) pluginMapper.toPluginModel(plugin))
+                .toList();
+
+        return plugins;
     }
+
+    private List<MavenDependency> getDependencies(MavenProject project){
+        var test1 = project.getDependencies();
+        var test2= project.getBuild();
+        DependencyMapper dependencyMapper = DependencyMapper.INSTANCE;
+
+        return  project.getDependencies()
+                .stream()
+                .map(dependency -> (MavenDependency) dependencyMapper.toDependencyModel(dependency))
+                .toList();
+    }
+
 }

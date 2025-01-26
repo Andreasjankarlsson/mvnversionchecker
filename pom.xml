@@ -34,46 +34,33 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-api</artifactId>
-            <version>1.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-impl</artifactId>
-            <version>1.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-spi</artifactId>
-            <version>1.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-util</artifactId>
-            <version>1.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-connector-basic</artifactId>
-            <version>1.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-transport-wagon</artifactId>
-            <version>1.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.30</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-core</artifactId>
+            <version>12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-jackson</artifactId>
+            <version>12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.5.2.Final</version>
+        </dependency>
+
+        <!-- MapStruct Processor -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>1.5.2.Final</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

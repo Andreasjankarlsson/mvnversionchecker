@@ -10,17 +10,18 @@ import java.util.List;
 @Setter
 @Builder
 public class PluginModel implements  MavenDependency{
+    private final DependencyType dependencyType = DependencyType.PLUGIN;
     private String groupdId;
     private String artifactId;
     private String version;
-    private List<Version> versions;
+    private List<DependencyVersion> dependencyVersions;
 
     public String getLatestVersion(String regex) {
-        return Version.getLatestVersion(versions,regex).get().getVersion();
+        return DependencyVersion.getLatestVersion(dependencyVersions,regex).get().getVersion();
     }
 
     public boolean newerVersionExist(String regex){
-        var newestVersion = Version.getLatestVersion(versions,regex).get().getVersion();
+        var newestVersion = DependencyVersion.getLatestVersion(dependencyVersions,regex).get().getVersion();
         return !newestVersion.equals(this.version);
     }
 

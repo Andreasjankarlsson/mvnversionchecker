@@ -13,13 +13,13 @@ import java.util.Optional;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Version {
+public class DependencyVersion {
     private long timestamp;
     private String version;
 
-    public static Optional<Version> getLatestVersion(List<Version> versions, String regex) {
-        return versions.stream()
+    public static Optional<DependencyVersion> getLatestVersion(List<DependencyVersion> dependencyVersions, String regex) {
+        return dependencyVersions.stream()
                 .filter(version -> version.getVersion().matches(regex))
-                .max(Comparator.comparingLong(Version::getTimestamp));
+                .max(Comparator.comparingLong(DependencyVersion::getTimestamp));
     }
 }

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 @Setter
@@ -21,8 +22,14 @@ public class PluginModel implements  MavenDependency{
     }
 
     public boolean newerVersionExist(String regex){
-        var newestVersion = DependencyVersion.getLatestVersion(dependencyVersions,regex).get().getVersion();
-        return !newestVersion.equals(this.version);
+        if(dependencyVersions == null || dependencyVersions.isEmpty()){
+            return false;
+        }
+        Optional<DependencyVersion> optionalNewestVersion =DependencyVersion.getLatestVersion(dependencyVersions,regex);
+        if(optionalNewestVersion.isEmpty()){
+            return false;
+        }
+        return !optionalNewestVersion.get().equals(this.version);
     }
 
 }

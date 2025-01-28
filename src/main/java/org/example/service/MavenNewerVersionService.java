@@ -1,8 +1,5 @@
 package org.example.service;
 
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.example.integration.client.MvnSearchService;
 import org.example.mapper.DependencyMapper;
@@ -13,12 +10,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MavenVersionService {
+public class MavenNewerVersionService {
     private final MvnSearchService searchService;
-    private static String VERSION_MATCH;
+    private String VERSION_MATCH;
     private final MavenProject project;
 
-    public MavenVersionService(MavenProject project, String versionFilter)      {
+    public MavenNewerVersionService(MavenProject project, String versionFilter)      {
         this.VERSION_MATCH = versionFilter;
         this.searchService = new MvnSearchService();
         this.project = project;
@@ -64,8 +61,6 @@ public class MavenVersionService {
     }
 
     private List<MavenDependency> getDependencies(MavenProject project){
-        var test1 = project.getDependencies();
-        var test2= project.getBuild();
         DependencyMapper dependencyMapper = DependencyMapper.INSTANCE;
 
         return  project.getDependencies()

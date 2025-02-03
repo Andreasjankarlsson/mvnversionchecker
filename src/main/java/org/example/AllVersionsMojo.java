@@ -5,17 +5,39 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.example.model.MavenDependency;
 import org.example.service.MavenExistingVersionsService;
-import org.example.service.MavenNewerVersionService;
+
+import java.util.List;
 
 @Mojo(name = "allVersions", defaultPhase = LifecyclePhase.INSTALL)
 public class AllVersionsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
+    @Parameter(defaultValue = "${reactorProjects}", readonly = true)
+    private List<MavenProject> reactorProjects;
+
     public void execute() {
-        getLog().info("All existing dependencies and plugins");
-        MavenExistingVersionsService service = new MavenExistingVersionsService(project);
-        service.getLogsRowsWithVersions().forEach(logRow -> getLog().info(logRow));
+        if (project.isExecutionRoot()) {
+            MavenExistingVersionsService service = new MavenExistingVersionsService();
+            getLog().info("All external dependencies and plugins");
+            List<MavenDependency> dependencies = service.getAllDependencies(reactorProjects);
+            for (var dependency : dependencies) {
+                String logRow = String.format("%s:%s:%s:%s",
+                        toTitleCase(dependency.getDependencyType().name()),
+                        dependency.getGroupdId(),
+                        dependency.getArtifactId(),
+                        dependency.getVersion());
+                getLog().info(logRow);
+            }
+        }
+    }
+
+    public String toTitleCase(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
     }
 }

@@ -7,7 +7,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.example.model.MavenDependency;
-import org.example.service.MavenExistingVersionsService;
+import org.example.service.MavenVersionsService;
 
 import java.util.List;
 
@@ -23,8 +23,8 @@ public class NewerVersionsMojo extends AbstractMojo {
 
     public void execute() {
         if (project.isExecutionRoot()) {
-            MavenExistingVersionsService service = new MavenExistingVersionsService();
-            List<MavenDependency> dependencies = service.getDependenciesWithNewerVersions(reactorProjects, versionRegex);
+            MavenVersionsService service = new MavenVersionsService();
+            List<MavenDependency> dependencies = service.getExternalDependenciesWithNewerVersions(reactorProjects, versionRegex);
             if (dependencies.isEmpty()) {
                 getLog().info("No dependencies with newer versions exists");
             } else {

@@ -13,42 +13,39 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class MavenExistingVersionsService {
-    private MavenProject project;
+public class MavenVersionsService {
+    private static final Comparator<MavenDependency> dependencyComparator = new DependencyComparator();
+    private static final VersionComparator versionComparator = new VersionComparator();
+    private static final MvnSearchService searchService = new MvnSearchService();
+    private static final PluginService pluginService = new PluginService();
+    private static final DependencyService dependencyService = new DependencyService();
 
-    public MavenExistingVersionsService() {
-
+    public MavenVersionsService() {
     }
 
-    public List<MavenDependency> getAllDependencies(List<MavenProject> projects) {
-        Comparator<MavenDependency> comparator = new DependencyComparator();
-        Set<MavenDependency> dependencies = new TreeSet<>(comparator);
-        Set<MavenDependency> ownModules = new TreeSet<>(comparator);
-        PluginService pluginService = new PluginService();
-        DependencyService dependencyService = new DependencyService();
+    public List<MavenDependency> getAllExternalDependencies(List<MavenProject> projects) {
+        Set<MavenDependency> dependencies = new TreeSet<>(dependencyComparator);
+        Set<MavenDependency> ownModules = new TreeSet<>(dependencyComparator);
 
-        for (var proj : projects) {
+        for (var project : projects) {
             MavenDependency module = DependencyModel.builder()
-                    .groupdId(proj.getGroupId())
-                    .artifactId(proj.getArtifactId())
-                    .version(proj.getVersion())
+                    .groupdId(project.getGroupId())
+                    .artifactId(project.getArtifactId())
+                    .version(project.getVersion())
                     .build();
             ownModules.add(module);
 
-            dependencies.addAll(pluginService.getPlugins(proj));
-            dependencies.addAll(dependencyService.getDependencies(proj));
+            dependencies.addAll(pluginService.getPlugins(project));
+            dependencies.addAll(dependencyService.getDependencies(project));
         }
 
         return dependencies.stream()
                 .filter(dep -> !ownModules.contains(dep))
-                .sorted(comparator).toList();
+                .sorted(dependencyComparator).toList();
     }
 
-    public List<MavenDependency> getDependenciesWithNewerVersions(List<MavenProject> projects, String regex) {
-        MvnSearchService searchService = new MvnSearchService();
-        VersionComparator versionComparator = new VersionComparator();
-
-        List<MavenDependency> dependencies = getAllDependencies(projects);
+    public List<MavenDependency> getExternalDependenciesWithNewerVersions(List<MavenProject> projects, String regex) {
+        List<MavenDependency> dependencies = getAllExternalDependencies(projects);
         for (var dependency : dependencies) {
             DependencyVersion currentVersion = DependencyVersion.builder()
                     .version(dependency.getVersion())

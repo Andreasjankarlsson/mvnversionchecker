@@ -6,7 +6,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.example.model.MavenDependency;
-import org.example.service.MavenExistingVersionsService;
+import org.example.service.MavenVersionsService;
 
 import java.util.List;
 
@@ -20,9 +20,9 @@ public class AllVersionsMojo extends AbstractMojo {
 
     public void execute() {
         if (project.isExecutionRoot()) {
-            MavenExistingVersionsService service = new MavenExistingVersionsService();
+            MavenVersionsService service = new MavenVersionsService();
             getLog().info("All external dependencies and plugins");
-            List<MavenDependency> dependencies = service.getAllDependencies(reactorProjects);
+            List<MavenDependency> dependencies = service.getAllExternalDependencies(reactorProjects);
             for (var dependency : dependencies) {
                 String logRow = String.format("%s:%s:%s:%s",
                         toTitleCase(dependency.getDependencyType().name()),

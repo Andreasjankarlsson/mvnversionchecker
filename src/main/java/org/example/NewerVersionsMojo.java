@@ -6,6 +6,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.example.exception.EnforceVersionException;
 import org.example.model.MavenDependency;
 import org.example.service.MavenVersionsService;
 
@@ -16,10 +17,12 @@ import java.util.List;
 public class NewerVersionsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
-    @Parameter(property = "versionRegex", defaultValue = ".*") //"^\\d+\\.\\d+\\.\\d+$"
-    private String versionRegex;
     @Parameter(defaultValue = "${reactorProjects}", readonly = true)
     private List<MavenProject> reactorProjects;
+    @Parameter(property = "versionRegex", defaultValue = ".*") //"^\\d+\\.\\d+\\.\\d+$"
+    private String versionRegex;
+    @Parameter(property = "enforceRule")
+    private Integer numberOfAllowedNewerVersions;
 
     public void execute() {
         if (project.isExecutionRoot()) {
@@ -27,24 +30,18 @@ public class NewerVersionsMojo extends AbstractMojo {
             List<MavenDependency> dependencies = service.getExternalDependenciesWithNewerVersions(reactorProjects, versionRegex);
             if (dependencies.isEmpty()) {
                 getLog().info("No dependencies with newer versions exists");
-            } else {
-                getLog().info("The following dependencies has newer versions");
+                return;
             }
 
-            for (var dependency : dependencies) {
-                String logRow = String.format("%s:%s:%s:(%s -> %s)",
-                        toTitleCase(dependency.getDependencyType().name()),
-                        dependency.getGroupdId(),
-                        dependency.getArtifactId(),
-                        dependency.getVersion(),
-                        dependency.getDependencyVersions().get(0).getVersion());
-                getLog().info(logRow);
+            getLog().info("The following dependencies has newer versions");
+            if (numberOfAllowedNewerVersions != null) {
+                dependencies = service.filterNumberOfVersions(dependencies, numberOfAllowedNewerVersions);
+                errorLog(dependencies);
+                throw new EnforceVersionException("Maven dependencies has to be updated");
+            } else {
+                dependencies.forEach(this::infoLog);
             }
         }
-
-        //getLog().info("Starting checking versions, with versionRegex: " + versionRegex);
-        //MavenNewerVersionService versionService = new MavenNewerVersionService(project, versionRegex);
-        //versionService.getLogsRowsWithNewerVersions().forEach(logRow -> getLog().warn(logRow));
     }
 
     public String toTitleCase(String input) {
@@ -52,6 +49,45 @@ public class NewerVersionsMojo extends AbstractMojo {
             return input;
         }
         return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
+    }
+
+    private void infoLog(MavenDependency dependency) {
+        String logRow = String.format("%s:%s:%s:(%s -> %s)",
+                toTitleCase(dependency.getDependencyType().name()),
+                dependency.getGroupdId(),
+                dependency.getArtifactId(),
+                dependency.getVersion(),
+                dependency.getDependencyVersions().get(0).getVersion());
+        getLog().info(logRow);
+    }
+
+    private void errorLog(List<MavenDependency> dependencies) {
+        int longestKey = 0;
+        for (var dependency : dependencies) {
+            int keyLength = String.format("%s:%s",
+                            dependency.getGroupdId(),
+                            dependency.getArtifactId())
+                    .length();
+            if (longestKey < keyLength) {
+                longestKey = keyLength;
+            }
+        }
+
+        for (var dependency : dependencies) {
+            // Combine groupId and artifactId
+            String leftSide = String.format("%s:%s", dependency.getGroupdId(), dependency.getArtifactId());
+            String rightSide = String.format("%s newer versions exists (%s -> %s)",
+                    dependency.getDependencyVersions().size(),
+                    dependency.getVersion(),
+                    dependency.getDependencyVersions().get(0).getVersion());
+
+
+            int totalLength = longestKey + 2;
+            int dotsCount = totalLength - leftSide.length();
+            String dots = ".".repeat(dotsCount);
+
+            getLog().error(leftSide + dots + rightSide);
+        }
     }
 }
 

@@ -67,4 +67,9 @@ public class MavenVersionsService {
     }
 
 
+    public List<MavenDependency> filterNumberOfVersions(List<MavenDependency> dependencies, int numberOfNewerVersions) {
+        return dependencies.stream()
+                .filter(dep -> dep.getDependencyVersions().size() > numberOfNewerVersions)
+                .toList();
+    }
 }

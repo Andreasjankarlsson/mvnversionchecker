@@ -5,38 +5,39 @@ import org.example.model.DependencyVersion;
 import java.util.Comparator;
 
 public class VersionComparator implements Comparator<DependencyVersion> {
+    @Override
     public int compare(DependencyVersion ver1, DependencyVersion ver2) {
-        // Handle null versions
-        if (ver1 == null || ver1.getVersion() == null) {
-            return (ver2 == null || ver2.getVersion() == null) ? 0 : -1; // If ver1 is null or version is null, it's smaller
+        if (isNullOrEmpty(ver1)) return isNullOrEmpty(ver2) ? 0 : -1;
+        if (isNullOrEmpty(ver2)) return 1;
+
+        String[] parts1 = ver1.getVersion().split("\\.");
+        String[] parts2 = ver2.getVersion().split("\\.");
+
+        int maxLength = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < maxLength; i++) {
+            String part1 = (i < parts1.length) ? parts1[i] : "0";
+            String part2 = (i < parts2.length) ? parts2[i] : "0";
+
+            int result = compareVersionParts(part1, part2);
+            if (result != 0) return result;
         }
-        if (ver2 == null || ver2.getVersion() == null) {
-            return 1; // If ver2 is null or version is null, ver1 is greater
-        }
-
-        // Both versions are non-null, proceed with string comparison
-        String version1 = ver1.getVersion();
-        String version2 = ver2.getVersion();
-
-        // Split the version strings into parts based on dot ('.')
-        String[] versionParts1 = version1.split("\\.");
-        String[] versionParts2 = version2.split("\\.");
-
-        // Compare the version parts one by one
-        int length = Math.max(versionParts1.length, versionParts2.length);
-        for (int i = 0; i < length; i++) {
-            // Get the parts for comparison, treat missing parts as '0' (e.g., '1.0' vs '1.0.0')
-            String part1 = (i < versionParts1.length) ? versionParts1[i] : "0";
-            String part2 = (i < versionParts2.length) ? versionParts2[i] : "0";
-
-            // Compare the parts as strings directly (lexicographical comparison)
-            int comparisonResult = part1.compareTo(part2);
-            if (comparisonResult != 0) {
-                return comparisonResult; // Return if the parts are not equal
-            }
-        }
-
-        // If all parts are equal, the versions are the same
         return 0;
+    }
+
+    private boolean isNullOrEmpty(DependencyVersion version) {
+        return version == null || version.getVersion() == null;
+    }
+
+    private int compareVersionParts(String part1, String part2) {
+        int num1 = extractLeadingNumber(part1);
+        int num2 = extractLeadingNumber(part2);
+
+        if (num1 != num2) return Integer.compare(num1, num2);
+        return part1.compareTo(part2);
+    }
+
+    private int extractLeadingNumber(String part) {
+        String num = part.replaceAll("\\D.*", "");
+        return num.isEmpty() ? 0 : Integer.parseInt(num);
     }
 }

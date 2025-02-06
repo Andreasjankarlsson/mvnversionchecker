@@ -6,6 +6,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.StringUtils;
 import org.example.exception.EnforceVersionException;
 import org.example.model.MavenDependency;
 import org.example.service.MavenVersionsService;
@@ -44,8 +45,9 @@ public class NewerVersionsMojo extends AbstractMojo {
         }
     }
 
-    public String toTitleCase(String input) {
-        if (input == null || input.isEmpty()) {
+
+    private String toTitleCase(String input) {
+        if (StringUtils.isBlank(input)) {
             return input;
         }
         return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
@@ -62,6 +64,22 @@ public class NewerVersionsMojo extends AbstractMojo {
     }
 
     private void errorLog(List<MavenDependency> dependencies) {
+        for (var dependency : dependencies) {
+            // Combine groupId and artifactId
+            String leftSide = String.format("%s:%s", dependency.getGroupdId(), dependency.getArtifactId());
+            String rightSide = String.format("%s newer versions exists (%s -> %s)",
+                    dependency.getDependencyVersions().size(),
+                    dependency.getVersion(),
+                    dependency.getDependencyVersions().get(0).getVersion());
+            int totalLength = getLongestKey(dependencies) + 2;
+            int dotsCount = totalLength - leftSide.length();
+            String dots = ".".repeat(dotsCount);
+
+            getLog().error(leftSide + dots + rightSide);
+        }
+    }
+
+    private int getLongestKey(List<MavenDependency> dependencies) {
         int longestKey = 0;
         for (var dependency : dependencies) {
             int keyLength = String.format("%s:%s",
@@ -72,22 +90,7 @@ public class NewerVersionsMojo extends AbstractMojo {
                 longestKey = keyLength;
             }
         }
-
-        for (var dependency : dependencies) {
-            // Combine groupId and artifactId
-            String leftSide = String.format("%s:%s", dependency.getGroupdId(), dependency.getArtifactId());
-            String rightSide = String.format("%s newer versions exists (%s -> %s)",
-                    dependency.getDependencyVersions().size(),
-                    dependency.getVersion(),
-                    dependency.getDependencyVersions().get(0).getVersion());
-
-
-            int totalLength = longestKey + 2;
-            int dotsCount = totalLength - leftSide.length();
-            String dots = ".".repeat(dotsCount);
-
-            getLog().error(leftSide + dots + rightSide);
-        }
+        return longestKey;
     }
 }
 

@@ -21,7 +21,7 @@ public class MvnSearchService {
         log.debug("Fetching newer versions for " + dependency.getGroupdId() + ":" + dependency.getArtifactId());
         MvnSearchResponse response = client.getArtifactVersions(dependency.getGroupdId(),
                 dependency.getArtifactId(),
-                100);
+                20);
 
         return response.getResponse().getDocs().stream().map(
                         item -> DependencyVersion.builder()

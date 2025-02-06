@@ -22,6 +22,7 @@ public class AllVersionsMojo extends AbstractMojo {
         if (project.isExecutionRoot()) {
             MavenVersionsService service = new MavenVersionsService();
             getLog().info("All external dependencies and plugins");
+            getLog().info("Dependency type:Group id:Artifact id:Version ");
             List<MavenDependency> dependencies = service.getAllExternalDependencies(reactorProjects);
             for (var dependency : dependencies) {
                 String logRow = String.format("%s:%s:%s:%s",

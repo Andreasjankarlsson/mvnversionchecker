@@ -54,9 +54,15 @@ public class NewerVersionsMojo extends AbstractMojo {
     }
 
     private void infoLog(List<MavenDependency> dependencies) {
-        int longestKey = getLongestKey(dependencies);
+        int longestKey = dependencies.stream()
+                .mapToInt(dependency -> String.format("%s:%s:%s",
+                        toTitleCase(dependency.getDependencyType().name()),
+                        dependency.getGroupdId(),
+                        dependency.getArtifactId()).length())
+                .max()
+                .orElse(0);
         for (var dependency : dependencies) {
-            String leftSide = String.format("%s:%s:%s)",
+            String leftSide = String.format("%s:%s:%s",
                     toTitleCase(dependency.getDependencyType().name()),
                     dependency.getGroupdId(),
                     dependency.getArtifactId());
@@ -72,10 +78,20 @@ public class NewerVersionsMojo extends AbstractMojo {
     }
 
     private void errorLog(List<MavenDependency> dependencies) {
-        int longestKey = getLongestKey(dependencies);
+        int longestKey = dependencies.stream()
+                .mapToInt(dependency -> String.format("%s:%s:%s",
+                        dependency.getGroupdId(),
+                        dependency.getArtifactId(),
+                        dependency.getVersion()).length())
+                .max()
+                .orElse(0);
+
         for (var dependency : dependencies) {
-            // Combine groupId and artifactId
-            String leftSide = String.format("%s:%s", dependency.getGroupdId(), dependency.getArtifactId());
+            // Combine type groupId and artifactId
+            String leftSide = String.format("%s:%s:%s",
+                    toTitleCase(dependency.getDependencyType().name()),
+                    dependency.getGroupdId(),
+                    dependency.getArtifactId());
             String rightSide = String.format("%s newer versions exists (%s -> %s)",
                     dependency.getDependencyVersions().size(),
                     dependency.getVersion(),
@@ -86,20 +102,6 @@ public class NewerVersionsMojo extends AbstractMojo {
 
             getLog().error(leftSide + dots + rightSide);
         }
-    }
-
-    private int getLongestKey(List<MavenDependency> dependencies) {
-        int longestKey = 0;
-        for (var dependency : dependencies) {
-            int keyLength = String.format("%s:%s",
-                            dependency.getGroupdId(),
-                            dependency.getArtifactId())
-                    .length();
-            if (longestKey < keyLength) {
-                longestKey = keyLength;
-            }
-        }
-        return longestKey;
     }
 }
 

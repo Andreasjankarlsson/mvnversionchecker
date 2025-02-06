@@ -40,7 +40,7 @@ public class NewerVersionsMojo extends AbstractMojo {
                 errorLog(dependencies);
                 throw new EnforceVersionException("Maven dependencies has to be updated");
             } else {
-                dependencies.forEach(this::infoLog);
+                infoLog(dependencies);
             }
         }
     }
@@ -53,17 +53,26 @@ public class NewerVersionsMojo extends AbstractMojo {
         return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
     }
 
-    private void infoLog(MavenDependency dependency) {
-        String logRow = String.format("%s:%s:%s:(%s -> %s)",
-                toTitleCase(dependency.getDependencyType().name()),
-                dependency.getGroupdId(),
-                dependency.getArtifactId(),
-                dependency.getVersion(),
-                dependency.getDependencyVersions().get(0).getVersion());
-        getLog().info(logRow);
+    private void infoLog(List<MavenDependency> dependencies) {
+        int longestKey = getLongestKey(dependencies);
+        for (var dependency : dependencies) {
+            String leftSide = String.format("%s:%s:%s)",
+                    toTitleCase(dependency.getDependencyType().name()),
+                    dependency.getGroupdId(),
+                    dependency.getArtifactId());
+
+            String rightSide = String.format("(%s -> %s)",
+                    dependency.getVersion(),
+                    dependency.getDependencyVersions().get(0).getVersion());
+            int totalLength = longestKey + 2;
+            int dotsCount = totalLength - leftSide.length();
+            String dots = ".".repeat(dotsCount);
+            getLog().info(leftSide + dots + rightSide);
+        }
     }
 
     private void errorLog(List<MavenDependency> dependencies) {
+        int longestKey = getLongestKey(dependencies);
         for (var dependency : dependencies) {
             // Combine groupId and artifactId
             String leftSide = String.format("%s:%s", dependency.getGroupdId(), dependency.getArtifactId());
@@ -71,7 +80,7 @@ public class NewerVersionsMojo extends AbstractMojo {
                     dependency.getDependencyVersions().size(),
                     dependency.getVersion(),
                     dependency.getDependencyVersions().get(0).getVersion());
-            int totalLength = getLongestKey(dependencies) + 2;
+            int totalLength = longestKey + 2;
             int dotsCount = totalLength - leftSide.length();
             String dots = ".".repeat(dotsCount);
 
